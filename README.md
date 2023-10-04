@@ -1,83 +1,96 @@
-# Calcite Components Examples
+# React
 
-Working example applications utilizing [calcite-components](https://github.com/Esri/calcite-components). Each folder within this repository is its own mini application demonstrating integration of Calcite Components with other technologies and tooling.
+This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-Most frameworks provide a CLI tool to quickly start up a repo. If available, these tools are used to create the examples to ensure they are colloquial to the framework in question. After a starter project is scaffolded up, calcite-components are installed and some general steps are taken:
+In the project directory, you can run:
 
-1. Include Calcite Components' loader and define the custom elements
-2. Pull in Calcite Components' global CSS file (provides theming variables, etc)
-3. Ensure Calcite Components' assets get copied into the project (allows the `calcite-icon` component to work)
-
-This repository will change over time as new best-practices are established and framework integrations are improved.
-
-## Angular
-
-The [Angular example](./angular/) was built using the `@angular/cli` package:
-
-```
-npm install -g @angular/cli
-ng new [NAME]
+```sh
+npm install
+npm start
 ```
 
-## Ember
+Runs the app in the development mode.<br />
+Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 
-The [ember app](./ember/) used the `ember-cli` package to get started:
+The page will reload if you make edits.<br />
+You will also see any lint errors in the console.
 
-```
-npm install -g ember-cli
-ember new [NAME]
-```
+## Calcite Components with React
 
-## React
+To install [`calcite-components-react`](https://www.npmjs.com/package/@esri/calcite-components-react), run:
 
-The [example react app](./react/) was created using the `create-react-app` utility:
-
-```
-npx create-react-app [NAME]
+```sh
+npm install --save @esri/calcite-components-react
 ```
 
-## Preact
+This package includes the compatible version of the main component library as a dependency, so no need to install `@esri/calcite-components` separately.
 
-The [example preact app](./preact-typescript/) was created using the `preact create` utility:
+## Use
 
-```
-npm install -g preact-cli
-preact create typescript [NAME]
-```
+[Custom Elements](https://stenciljs.com/docs/custom-elements) is the recommended build when using frontend frameworks, such as React. To use this build, you will need to set the path to the `calcite-components` assets. You can either use local assets, which will be explained in a subsequent step, or assets hosted on a CDN. This example uses local assets.
 
-This example also uses TypeScript, and provides additional instructions for getting calcite components to work inside a TypeScript + Preact environment.
+```jsx
+import { setAssetPath } from '@esri/calcite-components/dist/components';
+// Local assets
+setAssetPath(window.location.href);
 
-## Vue
-
-The [Vue.js example](./vue/) was built using the `cli-service-global` package:
-
-```
-npm install -g @vue/cli
-vue create [NAME]
+// CDN hosted assets
+// setAssetPath("https://unpkg.com/@esri/calcite-components/dist/calcite/assets");
 ```
 
-## Rollup
+Next, you need to import each component you use from `calcite-components-react`. This will automatically define the custom elements on the browser.
 
-The [Rollup example](./rollup/) was generated with [rollup-starter-app](https://github.com/rollup/rollup-starter-app):
-
+```jsx
+import {
+  CalciteButton,
+  CalciteIcon,
+  CalciteSlider
+} from '@esri/calcite-components-react';
 ```
-npx degit "rollup/rollup-starter-app" [NAME]
+
+### Import stylesheet
+
+Import the global stylesheet into your app (only do this once):
+
+```js
+import '@esri/calcite-components/dist/calcite/calcite.css';
 ```
 
-## Webpack
+### Copy local assets
 
-The [Webpack example](./webpack/) was built from scratch using Webpack 4.x.
+Some components (icon, date-picker) rely on assets being available at a particular path. If using assets locally, you'll need to copy these over to your public folder. This example has a `copy` npm script which will automatically run after the `install` script.
 
-## License
+```sh
+cp -r node_modules/@esri/calcite-components/dist/calcite/assets/* ./public/assets/
+```
 
-COPYRIGHT © 2023 Esri
+## Why not just use the web components directly?
 
-All rights reserved under the copyright laws of the United States and applicable international laws, treaties, and conventions.
+Because React uses a synthetic event system, the custom events emitted from calcite components won't work with JSX in React. For example, say you want to update some value when the `calcite-slider` component changes. When using the standard web components, you need to save a ref to the element, and add a listener:
 
-This material is licensed for use under the Esri Master License Agreement (MLA), and is bound by the terms of that agreement. You may redistribute and use this code without modification, provided you adhere to the terms of the MLA and include this copyright notice.
+```jsx
+const sliderEl = useRef(null);
+const [sliderValue, setSliderValue] = useState(50);
 
-See use restrictions at http://www.esri.com/legal/pdfs/mla_e204_e300/english
+function onUpdate(event) {
+  setSliderValue(event.target.value);
+}
 
-For additional information, contact: Environmental Systems Research Institute, Inc. Attn: Contracts and Legal Services Department 380 New York Street Redlands, California, USA 92373 USA
+// need to access the dom node to set custom event listeners for props that aren't strings / numbers
+// https://stenciljs.com/docs/react#properties-and-events
+useEffect(
+  (_) => {
+    sliderEl.current.addEventListener('calciteSliderUpdate', onUpdate);
+  },
+  [sliderEl]
+);
+```
 
-email: contracts@esri.com
+Using `calcite-components-react`, these events are connected for you:
+
+```jsx
+const [sliderValue, setSliderValue] = useState(50);
+<CalciteSlider onCalciteSliderUpdate={(e) => setSliderValue(e.target.value)} />;
+```
+
+If you're using TypeScript, you'll also get increased type safety for your event listeners, props, etc.
